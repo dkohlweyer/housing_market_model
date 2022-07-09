@@ -10,9 +10,9 @@ These instructions will allow you to run the model on your system.
 
 ### System Requirements and Installation
 
-To run the code you need to install **[Julia](https://julialang.org/)** (v1.6.0). Additionally, the following packages need to be installed:
+To run the code you need to install **[Julia](https://julialang.org/)** (v1.7.2). Additionally, the following packages need to be installed:
 
-* [Agents](https://juliadynamics.github.io/Agents.jl/stable/) - Version 4.2.4
+* [Agents](https://juliadynamics.github.io/Agents.jl/stable/) - Version 5.4.0
 * [ArgParse](https://argparsejl.readthedocs.io/en/latest/argparse.html) - Version 1.1.4
 * [CSV](https://csv.juliadata.org/stable/) - Version 0.8.4
 * [DataFrames](https://juliadata.github.io/) - Version 0.22.7

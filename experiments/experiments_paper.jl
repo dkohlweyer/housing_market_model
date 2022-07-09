@@ -1,5 +1,5 @@
 # Sim properties
-folder = "data/experiments_paper2/"
+folder = "data/experiments_paper/"
 iterations = 30000
 burn_in = 0
 no_runs = 25

@@ -112,7 +112,7 @@ baseline_properties = Dict(
 
 # Function to set up the initial state of the model
 function initialize(properties, num_households, num_firms, num_banks)
-    model = ABM(Union{Household, Firm, Bank, GoodsMarket, LaborMarket, CreditMarket, StatisticsAgent, Government, CapitalGoodsProducer, FinancialMarket, HousingMarket, MortgageMarket}, scheduler = random_activation, properties = properties, warn = false)
+    model = ABM(Union{Household, Firm, Bank, GoodsMarket, LaborMarket, CreditMarket, StatisticsAgent, Government, CapitalGoodsProducer, FinancialMarket, HousingMarket, MortgageMarket}, properties = properties, warn = false)
 
     # Load risk weights
     model.mortgage_risk_weight_lookup = CSV.File("model/lookuptable_risk_weights_mortgage_loans_w_rowLGD_colPD.csv", header=false)
