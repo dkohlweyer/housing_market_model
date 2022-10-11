@@ -281,29 +281,38 @@ function financial_planning(firm::Firm, model) # Eq. (32)-(33)
     # Determine credit demand
     prospective_labor_costs = firm.labor_demand * get_average_wage(firm, model)
     prospective_capital_expense = firm.capital_demand * model.capital_goods_producer.vintage_prices[firm.vintage_choice]
-    prospective_payments_for_loans = calculate_loan_payments(firm)
-    firm.credit_demand = max(0.0, (1+model.financial_planning_buffer)*(prospective_labor_costs + prospective_capital_expense + prospective_payments_for_loans + firm.taxes_due + firm.dividends_due) - firm.payment_account)
+    prospective_principal_payments, prospective_interest_payments = calculate_loan_payments(firm)
+    firm.credit_demand = max(0.0, (1+model.financial_planning_buffer)*(prospective_labor_costs + prospective_capital_expense + prospective_principal_payments + prospective_interest_payments + firm.taxes_due + firm.dividends_due) - firm.payment_account)
+
+
+    if firm.payment_account < prospective_interest_payments + firm.taxes_due
+        bankruptcy_procedure(firm, model, model.debt_rescaling_factor)
+    end
 
     @model_log firm "planning" "credit_demand" firm.credit_demand
 end
 
 function calculate_loan_payments(firm::Firm)
-    sum = 0.0
+    sum_principal = 0.0
+    sum_interest = 0.0
+
     for (loan, bank) in firm.loans
         if loan.repayment_started
-            sum += loan.installment + loan.interest_rate/12 * loan.principal
+            sum_interest += loan.interest_rate/12 * loan.principal
+            sum_principal += loan.installment + loan.interest_rate/12 * loan.principal
         end
     end
-    return sum
+
+    return sum_principal, sum_interest
 end
 
 function financial_and_production_replanning(firm::Firm, model)
     prospective_labor_costs = firm.labor_demand * get_average_wage(firm, model)
     prospective_capital_expense = firm.capital_demand * model.capital_goods_producer.vintage_prices[firm.vintage_choice]
-    prospective_payments_for_loans = calculate_loan_payments(firm)
+    prospective_principal_payments, prospective_interest_payments = calculate_loan_payments(firm)
 
     production_costs = prospective_labor_costs + prospective_capital_expense
-    payments_due = prospective_payments_for_loans + firm.taxes_due + firm.dividends_due
+    payments_due = prospective_principal_payments + prospective_interest_payments + firm.taxes_due + firm.dividends_due
 
     if firm.payment_account < production_costs + payments_due
         firm.credit_rationed = true
@@ -679,6 +688,21 @@ function choose_vintage(firm::Firm, model)
 end
 
 function market_research(firm::Firm, model)
+    if model.fixed_production
+        no_firms = (length(model.active_firms) + length(model.inactive_firms))
+        fixed_prod = (model.statistics.average_productivity * length(model.households)) / no_firms
+
+        firm.estimated_demand_variance = 0
+        firm.estimated_demand_schedule = fill(fixed_prod, model.firm_planning_horizon_months)
+        firm.estimated_demand_schedule_pos = 1
+
+        firm.price = model.statistics.market_size / (fixed_prod * no_firms)
+
+        firm.next_market_research_day = firm.next_market_research_day + model.firm_planning_horizon_months*20
+
+        return
+    end
+
     # Prepare
     number_prices = Int(floor((model.market_research_end_price - model.market_research_start_price) / model.market_research_increment))
 
@@ -1064,10 +1088,11 @@ function end_of_day(firm::Firm, model)
     # Accounting
     accounting(firm, model)
 
+
     # default
     if firm.active && firm.equity < 0
         @model_log firm "crisis" "bankruptcy_negative_equity"
-        bankruptcy_procedure(firm, model, calculate_writedown_factor_insolvency(firm, model))
+        #bankruptcy_procedure(firm, model, calculate_writedown_factor_insolvency(firm, model))
     end
 
     model.statistics.stocks.total_inventory += firm.inventory

@@ -113,7 +113,7 @@ function monthly_settlement(bank::Bank, model)
     bank.funding_costs = Statistics.mean(convert(Vector{Float64}, bank.funding_costs_history))
 
     # PD / LGD calculation Loans
-    number_loans_in_month = bank.number_loans - bank.number_loans_new + bank.number_loans_repaid
+    number_loans_in_month = max(0, bank.number_loans - bank.number_loans_new + bank.number_loans_repaid)
 
     @assert number_loans_in_month >= 0
 
@@ -292,7 +292,7 @@ function end_of_day(bank::Bank, model)
         model.statistics.flows.total_reserves_destroyed += interest_cb_debt
 
         if bank.equity < 0.0
-            bank.active_business = false
+            #bank.active_business = false
         else
             bank.active_business = true
         end
