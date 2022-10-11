@@ -18,40 +18,45 @@ include("markets/FinancialMarket.jl")
 
 # Define custom schedulers
 function hh_scheduler_randomly(model::ABM)
-    order = shuffle!(model.rng, collect(keys(model.households)))
+    return shuffle!(model.rng, collect(keys(model.households)))
 end
 hh_scheduler_fastest(model::ABM) = keys(model.households)
 
 function firm_scheduler_randomly(model::ABM)
-    order = shuffle!(model.rng, collect(keys(model.firms)))
+    return shuffle!(model.rng, collect(union(keys(model.active_firms), keys(model.inactive_firms))))
 end
-firm_scheduler_fastest(model::ABM) = keys(model.firms)
+firm_scheduler_fastest(model::ABM) = union(keys(model.active_firms), keys(model.inactive_firms))
+
+function active_firm_scheduler_randomly(model::ABM)
+    return shuffle!(model.rng, collect(keys(model.active_firms)))
+end
+active_firm_scheduler_fastest(model::ABM) = keys(model.active_firms)
 
 function bank_scheduler_randomly(model::ABM)
-    order = shuffle!(model.rng, collect(keys(model.banks)))
+    return shuffle!(model.rng, collect(keys(model.banks)))
 end
 bank_scheduler_fastest(model::ABM) = keys(model.banks)
 
 function households(f, model::ABM)
-    for i in keys(model.households)
+    for i in hh_scheduler_randomly(model)
         f(model.agents[i], model)
     end
 end
 
 function firms(f, model::ABM)
-    for i in union(keys(model.active_firms), keys(model.inactive_firms))
+    for i in firm_scheduler_randomly(model)
         f(model.agents[i], model)
     end
 end
 
 function active_firms(f, model::ABM)
-    for i in keys(model.active_firms)
+    for i in active_firm_scheduler_randomly(model)
         f(model.agents[i], model)
     end
 end
 
 function banks(f, model::ABM)
-    for i in keys(model.banks)
+    for i in bank_scheduler_randomly(model)
         f(model.agents[i], model)
     end
 end
